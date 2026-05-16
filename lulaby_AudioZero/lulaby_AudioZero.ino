@@ -5,7 +5,7 @@
 const int nextPin = 12;
 const int playPin = 11;
 const int prevPin = 10;
-const int audioOutPin = 14;
+// AudioZero drives the built-in DAC on A0 only — connect amp/speaker chain to A0, not a random D# pin.
 const int LED = 32;
 
 const int numSongs = 2;
@@ -47,7 +47,7 @@ void populateSongList() {
   root = SD.open("/");
   entry = root.openNextFile();
   count = 0;  
-  while(entry && (count <= numSongs)) {
+  while (entry && (count < numSongs)) {
     filename = String(entry.name());
     isSong = !entry.isDirectory() && !filename.startsWith("_") && (filename.endsWith(".WAV") || filename.endsWith(".wav"));
     if (isSong) {
@@ -65,8 +65,8 @@ void playSong() {
   currentSong = songList[songIndex];
   File currentSongFile = SD.open(currentSong);
   if (!currentSongFile) {
-    // if the file didn't open, print an error and stop
-    Serial.println("error opening song '" + currentSong);
+    Serial.println("error opening song '" + currentSong + "'");
+    return;
   }
 
   Serial.println("Playing " + currentSong);
@@ -76,7 +76,6 @@ void playSong() {
 }
 
 void setup() {
-  pinMode(audioOutPin, OUTPUT);
   pinMode(LED, OUTPUT);
     
   // INPUT_PULLUP will return 1/HIGH until the button is pressed
@@ -103,8 +102,8 @@ void setup() {
   // // hi-speed SPI transfers
   // SPI.setClockDivider(4);
 
-  // 44100kHz stereo => 88200 sample rate
-  AudioZero.begin(2*44100);
+  // 44.1 kHz stereo 8-bit WAV => 88200 bytes/s (one byte per timer tick)
+  AudioZero.begin(2 * 44100);
 }
 
 void loop() {
@@ -154,7 +153,7 @@ void loop() {
   } else if (lastPrevState == LOW && prevState == HIGH) {
     // play btn released
     digitalWrite(LED, LOW);
-    lastPrevState = prevState;    
-  }ß   
+    lastPrevState = prevState;
+  }
 }
 
